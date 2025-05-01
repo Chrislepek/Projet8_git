@@ -1,0 +1,21 @@
+setuptools
+
+# FastAPI et Uvicorn pour l'API
+fastapi
+uvicorn
+
+# Bibliothèques pour la manipulation des données
+pandas
+numpy
+
+# Bibliothèque pour la gestion des modèles de machine learning
+scikit-learn
+
+# Bibliothèque pour la gestion des fichiers joblib
+joblib
+
+#streamlit
+streamlit
+
+#pytest
+pytest
