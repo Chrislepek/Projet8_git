@@ -6,6 +6,8 @@ import pandas as pd
 from typing import List, Dict
 import os
 import logging
+import math
+import json
 
 # Configuration du logger
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +38,17 @@ def load_scaler():
 
 def load_model():
     return joblib.load(MODEL_PATH)
+
+#nettoyage des données 
+def replace_nan_with_none(data):
+    if isinstance(data, dict):
+        return {k: replace_nan_with_none(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [replace_nan_with_none(v) for v in data]
+    elif isinstance(data, float) and math.isnan(data):
+        return None
+    else:
+        return data 
 
 # Charge les données
 df = load_data()
@@ -100,7 +113,8 @@ def client_info(client_id: int):
         client_info = get_client_info(client_id)
         if client_info is None:
             raise HTTPException(status_code=404, detail="Client not found mais ça passe")
-        return client_info
+        clean_client_info = replace_nan_with_none(client_info)
+        return clean_client_info
     except Exception as e:
         return {"error": str(e)}
 
