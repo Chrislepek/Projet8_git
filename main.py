@@ -1,22 +1,35 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 import joblib
 import numpy as np
 from pydantic import BaseModel
 import pandas as pd
 from typing import List, Dict
+import os
+import logging
 
+# Configuration du logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 # Chemins vers les fichiers
 DATA_PATH = './small_data.csv'
 CLIENT_INFO_PATH = './appli_train_small.csv'  # Nouveau fichier pour les informations originelles des clients liés à small_data
 SCALER_PATH = './scaler.joblib'
 MODEL_PATH = './model.joblib'
 
+colonnes_2keep = ['SK_ID_CURR', 'NAME_CONTRACT_TYPE', 'CODE_GENDER', 'FLAG_OWN_CAR','FLAG_OWN_REALTY', 'CNT_CHILDREN', 'AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY','OCCUPATION_TYPE']
+
 # Fonctions pour charger les données, le scaler et le modèle
 def load_data():
     return pd.read_csv(DATA_PATH)
 
 def load_client_info():
-    return pd.read_csv(CLIENT_INFO_PATH)
+    try:
+        if not os.path.exists(CLIENT_INFO_PATH):
+            raise FileNotFoundError(f"Fichier introuvable : {CLIENT_INFO_PATH}")
+        return pd.read_csv(CLIENT_INFO_PATH, usecols=colonnes_2keep)
+    except Exception as e:
+        print(f"[ERREUR] Échec du chargement de client_info_df : {e}")
+        return pd.DataFrame(columns=colonnes_2keep)
 
 def load_scaler():
     return joblib.load(SCALER_PATH)
@@ -42,10 +55,17 @@ def get_client_data(client_id: int):
 
 # Fonction pour récupérer les informations descriptives d'un client
 def get_client_info(client_id: int):
+    if client_info_df.empty:
+        return None
+    logger.debug(f"Recherche des informations pour le client {client_id}")
     client_info = client_info_df[client_info_df['SK_ID_CURR'] == client_id]
     if client_info.empty:
         return None  # Client ID non trouvé
-    return client_info.to_dict(orient="records")[0]
+    print(f"[DEBUG] Client info avant transformation : {client_info}")
+    result = client_info.iloc[0].to_dict()
+    logger.debug(f"Informations client sous forme de dictionnaire : {result}")
+    print(f"[DEBUG] Client info après transformation en dictionnaire : {result}")
+    return result
 
 # Fonction pour récupérer l'importance des features globales
 def get_global_feature_importance():
@@ -64,7 +84,7 @@ def get_local_feature_importance(client_id: int):
 def predict(client_id: int):
     client_features = get_client_data(client_id)
     if client_features is None:
-        raise HTTPException(status_code=404, detail="Client not found")
+        raise HTTPException(status_code=404, detail="Client not found du predict")
     client_features_2d = np.array(client_features).reshape(1, -1)
     scaled_features = scaler.transform(client_features_2d)
     proba = model.predict_proba(scaled_features)
@@ -73,12 +93,16 @@ def predict(client_id: int):
     classe = "Accepté" if proba <= seuil else "Refusé"
     return {"client_id": client_id, "probabilité": proba[0], "classe": classe}
 
+
 @app.get("/client_info/{client_id}")
 def client_info(client_id: int):
-    client_info = get_client_info(client_id)
-    if client_info is None:
-        raise HTTPException(status_code=404, detail="Client not found")
-    return client_info
+    try:
+        client_info = get_client_info(client_id)
+        if client_info is None:
+            raise HTTPException(status_code=404, detail="Client not found mais ça passe")
+        return client_info
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/feature_importance/global")
 def feature_importance_global():
@@ -88,7 +112,7 @@ def feature_importance_global():
 def feature_importance_local(client_id: int):
     local_importance = get_local_feature_importance(client_id)
     if local_importance is None:
-        raise HTTPException(status_code=404, detail="Client not found")
+        raise HTTPException(status_code=404, detail="Client not found du local")
     return {"feature_importance": local_importance.tolist()}
 
 ##MAJ des données clients
