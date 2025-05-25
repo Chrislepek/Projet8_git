@@ -4,18 +4,23 @@ setuptools
 fastapi
 uvicorn
 
-# Bibliothèques pour la manipulation des données
+# Manipulation des données
 pandas
 numpy
 
-# Bibliothèque pour la gestion des modèles de machine learning
+# Machine Learning
 scikit-learn
-
-# Bibliothèque pour la gestion des fichiers joblib
 joblib
 
-#streamlit
+# Dashboard
 streamlit
 
-#pytest
+# Tests
 pytest
+httpx
+
+# Visualisation & interprétabilité
+matplotlib
+shap
+requests
+Pillow
