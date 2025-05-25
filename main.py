@@ -15,7 +15,7 @@ from pandas.api.types import CategoricalDtype
 BASE_URL = "https://arcane-dusk-90161-219ca85f1f94.herokuapp.com"
 #BASE_URL = "http://127.0.0.1:8000"
 
-CLIENT_INFO_PATH = 'C:/Users/Win10/Documents/Projet8_git/appli_train_small.csv'
+CLIENT_INFO_PATH = './appli_train_small.csv'
 #DATA_PATH = './small_data.csv'
 
 
