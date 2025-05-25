@@ -24,3 +24,4 @@ matplotlib
 shap
 requests
 Pillow
+plotly
