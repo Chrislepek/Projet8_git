@@ -242,117 +242,118 @@ st.set_page_config(
     layout="wide",  # ✅ Ce paramètre utilise toute la largeur de la page
     initial_sidebar_state="auto"
 )
+if not df.empty():
+    st.title("Dashboard de scoring Crédit Client")
 
-st.title("Dashboard de scoring Crédit Client")
+    # Entrée utilisateur
+    client_id = st.number_input("Entrez le Client ID", min_value=0, step=1)
 
-# Entrée utilisateur
-client_id = st.number_input("Entrez le Client ID", min_value=0, step=1)
+    # Division en deux colonnes principales
+    col_gauche, col_droite = st.columns([1, 2])
 
-# Division en deux colonnes principales
-col_gauche, col_droite = st.columns([1, 2])
+    # === COLONNE GAUCHE ===
+    with col_gauche:
+        st.subheader("Prédiction et Informations Client")
 
-# === COLONNE GAUCHE ===
-with col_gauche:
-    st.subheader("Prédiction et Informations Client")
+    # Bouton pour déclencher la prédiction
+        if st.button("Prédire"):
+            response = requests.get(f"{BASE_URL}/predict/{client_id}")
+            if response.status_code == 200:
+                result = response.json()
+                st.markdown(f"**Client ID** : {result['client_id']}")
+                st.markdown(f"**Probabilité de défaut** : {result['probabilité']:.4f}")
+                st.markdown(f"**Classe prédite** : {result['classe']}")
 
-# Bouton pour déclencher la prédiction
-    if st.button("Prédire"):
-        response = requests.get(f"{BASE_URL}/predict/{client_id}")
-        if response.status_code == 200:
-            result = response.json()
-            st.markdown(f"**Client ID** : {result['client_id']}")
-            st.markdown(f"**Probabilité de défaut** : {result['probabilité']:.4f}")
-            st.markdown(f"**Classe prédite** : {result['classe']}")
+                # Jauge
+                fig = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=result['probabilité'],
+                    title={'text': "Score de Crédit"},
+                    gauge={'axis': {'range': [0, 1]},
+                        'bar': {'color': "darkblue"},
+                        'steps': [
+                            {'range': [0, 0.07], 'color': "lightgreen"},
+                            {'range': [0.07, 1], 'color': "red"}
+                        ]}
+                ))
+                st.plotly_chart(fig)
 
-            # Jauge
-            fig = go.Figure(go.Indicator(
-                mode="gauge+number",
-                value=result['probabilité'],
-                title={'text': "Score de Crédit"},
-                gauge={'axis': {'range': [0, 1]},
-                       'bar': {'color': "darkblue"},
-                       'steps': [
-                           {'range': [0, 0.07], 'color': "lightgreen"},
-                           {'range': [0.07, 1], 'color': "red"}
-                       ]}
-            ))
-            st.plotly_chart(fig)
-
-            # Infos client
-            response_info = requests.get(f"{BASE_URL}/client_info/{client_id}")
-            if response_info.status_code == 200:
-                client_info = response_info.json()
-                filtered_info = {k: v for k, v in client_info.items() if k in colonnes_2keep}
-                st.subheader("Informations Client")
-                st.json(filtered_info)
+                # Infos client
+                response_info = requests.get(f"{BASE_URL}/client_info/{client_id}")
+                if response_info.status_code == 200:
+                    client_info = response_info.json()
+                    filtered_info = {k: v for k, v in client_info.items() if k in colonnes_2keep}
+                    st.subheader("Informations Client")
+                    st.json(filtered_info)
+                else:
+                    st.error("Erreur lors de la récupération des informations client.")
+            elif response.status_code == 404:
+                st.error("Client non trouvé")
             else:
-                st.error("Erreur lors de la récupération des informations client.")
-        elif response.status_code == 404:
-            st.error("Client non trouvé")
-        else:
-            st.error(f"Erreur: {response.status_code}")
+                st.error(f"Erreur: {response.status_code}")
 
-# === COLONNE DROITE ===
-with col_droite:
+    # === COLONNE DROITE ===
+    with col_droite:
 
- # Importance des features
-      
-    st.subheader("Importance des Features")
-    if st.button("Visualiser"): 
-        global_response = requests.get(f"{BASE_URL}/feature_importance/global")
-        local_response = requests.get(f"{BASE_URL}/feature_importance/local/{client_id}")
+    # Importance des features
+        
+        st.subheader("Importance des Features")
+        if st.button("Visualiser"): 
+            global_response = requests.get(f"{BASE_URL}/feature_importance/global")
+            local_response = requests.get(f"{BASE_URL}/feature_importance/local/{client_id}")
 
-        if global_response.status_code == 200 and local_response.status_code == 200:
-            global_img = Image.open(BytesIO(global_response.content))
-            local_img = Image.open(BytesIO(local_response.content))
+            if global_response.status_code == 200 and local_response.status_code == 200:
+                global_img = Image.open(BytesIO(global_response.content))
+                local_img = Image.open(BytesIO(local_response.content))
 
-            # Affichage côte à côte avec Streamlit
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("**Globale**")
-                st.image(global_img, use_container_width=True)
-            with col2:
-                st.markdown("**Locale**")
-                st.image(local_img, use_container_width=True)
-        else:
-            st.warning("Erreur lors de la récupération des graphiques d'importance.")
+                # Affichage côte à côte avec Streamlit
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("**Globale**")
+                    st.image(global_img, use_container_width=True)
+                with col2:
+                    st.markdown("**Locale**")
+                    st.image(local_img, use_container_width=True)
+            else:
+                st.warning("Erreur lors de la récupération des graphiques d'importance.")
+
+            st.markdown("---")
+
+    #Comparaison des caractéristiques des clients   
+        st.subheader("Comparaison des Caractéristiques")
+        feature = st.selectbox("Sélectionnez une feature", df.columns[1:], key="comp_feature")
+
+        if st.button("Comparer"):
+            response = requests.get(f"{BASE_URL}/client_info/{client_id}")
+            if response.status_code == 200:
+                client_info = response.json()
+                client_value = client_info[feature]
+                plot_feature_distribution(df, feature, client_value, client_id=client_id)
+            else:
+                st.error("Erreur lors de la récupération des données client.")
 
         st.markdown("---")
-
- #Comparaison des caractéristiques des clients   
-    st.subheader("Comparaison des Caractéristiques")
-    feature = st.selectbox("Sélectionnez une feature", df.columns[1:], key="comp_feature")
-
-    if st.button("Comparer"):
+    # Analyse bivariée    
+        st.subheader("Analyse Bivariée")
         response = requests.get(f"{BASE_URL}/client_info/{client_id}")
+        feature_1 = st.selectbox("Sélectionnez la première feature", df.columns[1:], key="biv1")
+        feature_2 = st.selectbox("Sélectionnez la deuxième feature", df.columns[1:], key="biv2")
+
         if response.status_code == 200:
             client_info = response.json()
-            client_value = client_info[feature]
-            plot_feature_distribution(df, feature, client_value, client_id=client_id)
+            client_value1 = client_info[feature_1]
+            client_value2 = client_info[feature_2]
         else:
             st.error("Erreur lors de la récupération des données client.")
-
-    st.markdown("---")
-# Analyse bivariée    
-    st.subheader("Analyse Bivariée")
-    response = requests.get(f"{BASE_URL}/client_info/{client_id}")
-    feature_1 = st.selectbox("Sélectionnez la première feature", df.columns[1:], key="biv1")
-    feature_2 = st.selectbox("Sélectionnez la deuxième feature", df.columns[1:], key="biv2")
-
-    if response.status_code == 200:
-        client_info = response.json()
-        client_value1 = client_info[feature_1]
-        client_value2 = client_info[feature_2]
-    else:
-        st.error("Erreur lors de la récupération des données client.")
-    if st.button("Analyser"):
-        plot_bivariate_analysis(df, feature_1, feature_2, client_value_x=client_value1, client_value_y=client_value2, client_id=client_id)
-        describe = generate_description_bivarie(df,feature_1,feature_2)
-        st.markdown(describe, unsafe_allow_html=True)
-        st.download_button(
-            label="Télécharger la description du graphique",
-            data=describe,
-            file_name="description_graphique_bivarie.txt",
-            mime="text/plain"
-    )
-
+        if st.button("Analyser"):
+            plot_bivariate_analysis(df, feature_1, feature_2, client_value_x=client_value1, client_value_y=client_value2, client_id=client_id)
+            describe = generate_description_bivarie(df,feature_1,feature_2)
+            st.markdown(describe, unsafe_allow_html=True)
+            st.download_button(
+                label="Télécharger la description du graphique",
+                data=describe,
+                file_name="description_graphique_bivarie.txt",
+                mime="text/plain"
+        )
+else:
+    st.warning("Données clients indisponible")
