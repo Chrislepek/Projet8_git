@@ -321,7 +321,13 @@ if not df.empty:
 
     #Comparaison des caractéristiques des clients   
         st.subheader("Comparaison des Caractéristiques")
-        feature = st.selectbox("Sélectionnez une feature", df.columns[1:], key="comp_feature")
+        options = ['Sélectionnez une feature'] + list(df.columns[1:])
+        feature = st.selectbox("Sélectionnez une feature", options, key="comp_feature")
+        # Gérer le cas où aucune vraie feature n’est sélectionnée
+        if feature == 'Sélectionnez une feature':
+            st.warning("Veuillez sélectionner deux features valides.")
+        else:
+            st.write(f"Feature sélectionnée : {feature}")
 
         if st.button("Comparer"):
             response = requests.get(f"{BASE_URL}/client_info/{client_id}")
@@ -335,9 +341,20 @@ if not df.empty:
         st.markdown("---")
     # Analyse bivariée    
         st.subheader("Analyse Bivariée")
+
+        #creation des box pour la sélection des features
         response = requests.get(f"{BASE_URL}/client_info/{client_id}")
-        feature_1 = st.selectbox("Sélectionnez la première feature", df.columns[1:], key="biv1")
-        feature_2 = st.selectbox("Sélectionnez la deuxième feature", df.columns[1:], key="biv2")
+        options = ['Sélectionnez une feature'] + list(df.columns[1:])
+
+        feature_1 = st.selectbox("Sélectionnez la première feature", options, key="biv1")
+        feature_2 = st.selectbox("Sélectionnez la deuxième feature", options, key="biv2")
+
+        # Gérer le cas où aucune vraie feature n’est sélectionnée
+        if feature_1 == 'Sélectionnez une feature' or feature_2 == 'Sélectionnez une feature':
+            st.warning("Veuillez sélectionner deux features valides.")
+        else:
+            st.write(f"Feature 1 sélectionnée : {feature_1}")
+            st.write(f"Feature 2 sélectionnée : {feature_2}")
 
         if response.status_code == 200:
             client_info = response.json()

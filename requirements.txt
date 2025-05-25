@@ -14,6 +14,7 @@ joblib
 
 # Dashboard
 streamlit
+statsmodels
 
 # Tests
 pytest
