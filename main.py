@@ -242,7 +242,7 @@ st.set_page_config(
     layout="wide",  # ✅ Ce paramètre utilise toute la largeur de la page
     initial_sidebar_state="auto"
 )
-if not df.empty():
+if not df.empty:
     st.title("Dashboard de scoring Crédit Client")
 
     # Entrée utilisateur
