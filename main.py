@@ -324,53 +324,49 @@ if not df.empty:
         options = ['Sélectionnez une feature'] + colonnes_2keep[1:]
         feature = st.selectbox("Sélectionnez une feature", options, key="comp_feature")
         # Gérer le cas où aucune vraie feature n’est sélectionnée
-        if feature == 'Sélectionnez une feature':
-            st.warning("Veuillez sélectionner deux features valides.")
-        else:
+        if feature != 'Sélectionnez une feature':
             st.write(f"Feature sélectionnée : {feature}")
 
-        if st.button("Comparer"):
-            response = requests.get(f"{BASE_URL}/client_info/{client_id}")
-            if response.status_code == 200:
-                client_info = response.json()
-                client_value = client_info[feature]
-                plot_feature_distribution(df, feature, client_value, client_id=client_id)
-            else:
-                st.error("Erreur lors de la récupération des données client.")
-
+            if st.button("Comparer"):
+                response = requests.get(f"{BASE_URL}/client_info/{client_id}")
+                if response.status_code == 200:
+                    client_info = response.json()
+                    client_value = client_info[feature]
+                    plot_feature_distribution(df, feature, client_value, client_id=client_id)
+                else:
+                    st.error("Erreur lors de la récupération des données client.")
+        else:
+            st.warning("Veuillez sélectionner une feature valide.")
+        
         st.markdown("---")
     # Analyse bivariée    
         st.subheader("Analyse Bivariée")
-
-        #creation des box pour la sélection des features
-        response = requests.get(f"{BASE_URL}/client_info/{client_id}")
-        options = ['Sélectionnez une feature'] + colonnes_2keep[1:]
-
         feature_1 = st.selectbox("Sélectionnez la première feature", options, key="biv1")
         feature_2 = st.selectbox("Sélectionnez la deuxième feature", options, key="biv2")
 
-        # Gérer le cas où aucune vraie feature n’est sélectionnée
-        if feature_1 == 'Sélectionnez une feature' or feature_2 == 'Sélectionnez une feature':
-            st.warning("Veuillez sélectionner deux features valides.")
-        else:
+        if feature_1 != 'Sélectionnez une feature' and feature_2 != 'Sélectionnez une feature':
             st.write(f"Feature 1 sélectionnée : {feature_1}")
             st.write(f"Feature 2 sélectionnée : {feature_2}")
 
-        if response.status_code == 200:
-            client_info = response.json()
-            client_value1 = client_info[feature_1]
-            client_value2 = client_info[feature_2]
+            response = requests.get(f"{BASE_URL}/client_info/{client_id}")
+            if response.status_code == 200:
+                client_info = response.json()
+                client_value1 = client_info[feature_1]
+                client_value2 = client_info[feature_2]
+
+                if st.button("Analyser"):
+                    plot_bivariate_analysis(df, feature_1, feature_2, client_value_x=client_value1, client_value_y=client_value2, client_id=client_id)
+                    describe = generate_description_bivarie(df, feature_1, feature_2)
+                    st.markdown(describe, unsafe_allow_html=True)
+                    st.download_button(
+                        label="Télécharger la description du graphique",
+                        data=describe,
+                        file_name="description_graphique_bivarie.txt",
+                        mime="text/plain"
+                    )
+            else:
+                st.error("Erreur lors de la récupération des données client.")
         else:
-            st.error("Erreur lors de la récupération des données client.")
-        if st.button("Analyser"):
-            plot_bivariate_analysis(df, feature_1, feature_2, client_value_x=client_value1, client_value_y=client_value2, client_id=client_id)
-            describe = generate_description_bivarie(df,feature_1,feature_2)
-            st.markdown(describe, unsafe_allow_html=True)
-            st.download_button(
-                label="Télécharger la description du graphique",
-                data=describe,
-                file_name="description_graphique_bivarie.txt",
-                mime="text/plain"
-        )
+            st.warning("Veuillez sélectionner deux features valides.")
 else:
     st.warning("Données clients indisponibles")
