@@ -321,7 +321,7 @@ if not df.empty:
 
     #Comparaison des caractéristiques des clients   
         st.subheader("Comparaison des Caractéristiques")
-        options = ['Sélectionnez une feature'] + list(df.columns[1:])
+        options = ['Sélectionnez une feature'] + colonnes_2keep[1:]
         feature = st.selectbox("Sélectionnez une feature", options, key="comp_feature")
         # Gérer le cas où aucune vraie feature n’est sélectionnée
         if feature == 'Sélectionnez une feature':
@@ -344,7 +344,7 @@ if not df.empty:
 
         #creation des box pour la sélection des features
         response = requests.get(f"{BASE_URL}/client_info/{client_id}")
-        options = ['Sélectionnez une feature'] + list(df.columns[1:])
+        options = ['Sélectionnez une feature'] + colonnes_2keep[1:]
 
         feature_1 = st.selectbox("Sélectionnez la première feature", options, key="biv1")
         feature_2 = st.selectbox("Sélectionnez la deuxième feature", options, key="biv2")
@@ -373,4 +373,4 @@ if not df.empty:
                 mime="text/plain"
         )
 else:
-    st.warning("Données clients indisponible")
+    st.warning("Données clients indisponibles")
