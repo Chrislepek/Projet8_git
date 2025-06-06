@@ -83,6 +83,8 @@ def plot_feature_distribution(df, feature, client_value, client_id="Client"):
         return
 
     # Mise en forme WCAG-friendly
+    x_title = prettify(feature)
+    y_title = "ClientIndex"
     fig.update_layout(
         paper_bgcolor='white',
         plot_bgcolor='white',
@@ -100,14 +102,20 @@ def plot_feature_distribution(df, feature, client_value, client_id="Client"):
             font=dict(color="black")
         ),
         xaxis=dict(
-            titlefont=dict(color='black'),
-            tickfont=dict(color='black')
+            title=x_title,
+            title_font=dict(color='black'),
+            tickfont=dict(color='black'),
+            linecolor='black',
+            gridcolor='lightgrey'
         ),
         yaxis=dict(
-            titlefont=dict(color='black'),
-            tickfont=dict(color='black')
+            title=y_title,
+            title_font=dict(color='black'),
+            tickfont=dict(color='black'),
+            linecolor='black',
+            gridcolor='lightgrey'
         )
-    )
+)
 
     st.plotly_chart(fig, use_container_width=True)
 
